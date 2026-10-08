@@ -86,6 +86,8 @@ namespace http
           "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello client!";
 
       ssize_t sent = send(m_new_socket, reply, sizeof(reply), 0);
+      if (sent < 0)
+        std::print(stderr, "[ERROR] Cannot reply to client");
     }
     else if (received == 0)
     {
@@ -98,58 +100,6 @@ namespace http
     }
 
     return 0;
-  }
-
-  Request TcpServer::parseRequestLine(std::string_view line)
-  {
-    auto firstSpace = line.find(' ');
-    if (firstSpace == line.npos)
-      return {};
-
-    auto secondSpace = line.find(' ', firstSpace + 1);
-    if (secondSpace == line.npos)
-      return {};
-
-    auto methodText = line.substr(0, firstSpace);
-    auto pathText = line.substr(firstSpace + 1, secondSpace - firstSpace - 1);
-    auto versionText = line.substr(secondSpace + 1);
-
-    Method method{Method::INVALID};
-    static const std::unordered_map<std::string_view, Method> methodMap = {
-        {"GET", Method::GET},       {"QUERY", Method::QUERY},
-        {"HEAD", Method::HEAD},     {"OPTIONS", Method::OPTIONS},
-        {"TRACE", Method::TRACE},   {"PUT", Method::PUT},
-        {"DELETE", Method::DELETE}, {"POST", Method::POST},
-        {"PATCH", Method::PATCH},   {"CONNECT", Method::CONNECT},
-    };
-
-    auto it = methodMap.find(methodText);
-    if (it != methodMap.end())
-      method = it->second;
-
-    const std::string path{pathText};
-    const std::string version{versionText};
-
-    return Request{.method = method, .path = path, .version = version};
-  }
-
-  std::unordered_map<std::string, std::string>
-  TcpServer::parseHeaderLine(std::string_view line)
-  {
-    auto leader = line.find(':');
-    if (leader == line.npos)
-      return {};
-
-    auto nameText = line.substr(0, leader);
-    auto valueText = line.substr(leader + 1);
-
-    if (!valueText.empty() && valueText.front() == ' ')
-      valueText = valueText.substr(1);
-
-    std::string name(nameText);
-    std::string value(valueText);
-
-    return std::unordered_map<std::string, std::string>{{name, value}};
   }
 
   void TcpServer::closeServer()
