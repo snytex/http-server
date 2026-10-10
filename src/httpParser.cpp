@@ -1,5 +1,6 @@
 #include "httpParser.h"
 #include <print>
+#include <sstream>
 
 namespace http
 {
@@ -53,7 +54,7 @@ namespace http
   HttpParser::HttpParser() {}
   HttpParser::~HttpParser() {}
 
-  Request HttpParser::parseRequestLine(std::string_view line)
+  Request HttpParser::parseStartLine(std::string_view line)
   {
     auto firstSpace = line.find(' ');
     if (firstSpace == std::string_view::npos)
@@ -100,12 +101,14 @@ namespace http
 
   Request HttpParser::parseRequest(std::string_view data)
   {
+    // start line
     auto current = 0;
     auto end = data.find("\r\n", 0);
     std::string requestLine(data.substr(0, end));
 
-    Request r = parseRequestLine(requestLine);
+    Request r = parseStartLine(requestLine);
 
+    // headers
     while (true)
     {
       current = (end + 2);
@@ -128,6 +131,23 @@ namespace http
       r.headers.emplace(name, value);
     }
 
+    // body
+    current = data.find("\r\n\r\n") + 4;
+    if (current == std::string_view::npos)
+      return r;
+
+    auto contentLength = r.headers.find("Content-Length");
+
+    std::stringstream ss(contentLength->second);
+
+    size_t length = 0;
+    ss >> length;
+
+    for (size_t i = 0; i < length; ++i)
+    {
+      r.body.push_back(std::byte(data[current + i]));
+    }
+
     return r;
   }
 
@@ -142,5 +162,12 @@ namespace http
     {
       std::println("{} = {}", pair.first, pair.second);
     }
+
+    std::println();
+    for (const auto& byte : request.body)
+    {
+      std::print("{}", static_cast<char>(byte));
+    }
+    std::println();
   }
 } // namespace http

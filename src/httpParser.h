@@ -3,6 +3,9 @@
 #include <unordered_map>
 #include <string_view>
 #include <string>
+#include <vector>
+#include <cstddef>
+#include <span>
 
 namespace http
 {
@@ -29,6 +32,7 @@ namespace http
     std::string path;
     std::string version;
     std::unordered_map<std::string, std::string> headers;
+    std::vector<std::byte> body;
   };
 
   class HttpParser
@@ -37,15 +41,13 @@ namespace http
     explicit HttpParser();
     ~HttpParser();
 
-    Request parseRequestLine(std::string_view line);
-
-    std::unordered_map<std::string, std::string>
-    parseHeaderLine(std::string_view line);
-
     Request parseRequest(std::string_view data);
-
     void printRequest(Request& request);
 
   private:
+    Request parseStartLine(std::string_view line);
+
+    std::unordered_map<std::string, std::string>
+    parseHeaderLine(std::string_view line);
   };
 } // namespace http

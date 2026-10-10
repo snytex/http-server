@@ -10,7 +10,8 @@ int main(void)
 
   char example[256] =
       "GET /test HTTP/1.1\r\nHost: 127.0.0.1:8000\r\nUser-Agent: "
-      "curl/...\r\nAccept: */*\r\n";
+      "curl/...\r\nAccept: */*\r\nContent-Length: 28\r\n\r\n{this is some json "
+      "probably}";
 
   TcpServer server = TcpServer();
   HttpParser parser = HttpParser();
